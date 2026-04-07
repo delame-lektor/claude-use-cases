@@ -364,20 +364,96 @@
     transition: all 0.15s;
     flex-shrink: 0;
   }
-  .vote-btn:hover:not(:disabled) {
+  .vote-btn.vote-up:hover:not(:disabled) {
     border-color: #f4a261;
     color: #b35e00;
     background: rgba(244,162,97,0.08);
+  }
+  .vote-btn.vote-down:hover:not(:disabled) {
+    border-color: #e63946;
+    color: #b31a26;
+    background: rgba(230,57,70,0.08);
   }
   .vote-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }
-  .vote-btn.voted {
+  .vote-btn.voted-up {
     border-color: #f4a261;
     background: rgba(244,162,97,0.12);
     color: #b35e00;
   }
+  .vote-btn.voted-down {
+    border-color: #e63946;
+    background: rgba(230,57,70,0.10);
+    color: #b31a26;
+  }
+
+  /* ─── EMAIL MODAL ─── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,18,9,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 380px;
+    width: calc(100% - 2rem);
+    box-shadow: 0 24px 64px rgba(26,18,9,0.2);
+  }
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.4rem;
+    color: var(--ink);
+    margin-bottom: 0.6rem;
+  }
+  .modal-desc {
+    font-size: 13px;
+    color: var(--ink2);
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+  }
+  .modal input[type=email] {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 8px;
+  }
+  .modal input[type=email]:focus { border-color: var(--ink3); }
+  .email-error {
+    font-size: 12px;
+    color: #e63946;
+    margin-bottom: 8px;
+  }
+  .email-submit {
+    width: 100%;
+    padding: 11px;
+    background: var(--ink);
+    color: #f5f0e8;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .email-submit:hover { opacity: 0.85; }
   .vote-count {
     font-family: 'DM Mono', monospace;
     font-size: 11px;
@@ -428,6 +504,17 @@
 </head>
 <body>
 
+<!-- ─── EMAIL MODAL ─── -->
+<div id="emailModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-title">Hlasujte pro nejlepší use cases</div>
+    <div class="modal-desc">Zadejte email pro přístup k hlasování. Každá adresa má <strong>10 hlasů</strong> — lze hlasovat ▲ i ▼, nebo hlas odvolat kliknutím znovu.</div>
+    <input type="email" id="emailInput" placeholder="vas@email.cz" autocomplete="email">
+    <div id="emailError" class="email-error hidden">Zadejte platný email</div>
+    <button id="emailSubmit" class="email-submit">Pokračovat →</button>
+  </div>
+</div>
+
 <header>
   <div class="header-inner">
     <div>
@@ -441,7 +528,7 @@
   </div>
 </header>
 <div class="vote-banner" id="voteBanner">
-  Hlasujte pro nejlepší use cases — každá IP adresa má <span>10 hlasů</span>. Zbývá vám: <span id="remainingVotes">…</span> hlasů.
+  Hlasujte ▲ nebo ▼ — max <span>10 use cases</span> per email. Zbývá vám: <span id="remainingVotes">…</span> hlasů.
 </div>
 
 <div class="controls-wrap">
@@ -468,7 +555,7 @@
   <!-- ─── SORTED BY VOTES VIEW ─── -->
   <div id="sorted-section" class="hidden">
     <div class="section-head-votes">
-      <span class="section-title">Nejhůře hlasované use cases</span>
+      <span class="section-title">Nejlépe hlasované use cases</span>
       <span class="section-count" id="sorted-count"></span>
     </div>
     <div class="cards" id="cards-sorted"></div>
@@ -668,12 +755,55 @@ const DATA = [
 let activeFilter = "all";
 let searchVal = "";
 let sortByVotes = false;
-let voteCounts = {};      // { "1": 5, "3": 2, ... }
+let voteCounts = {};   // { "1": 5, "3": -1, ... } net scores
+let userVotes = {};    // { "1": "up", "5": "down" } current user's votes
 let remainingVotes = 10;
-let votedIds = new Set(); // IDs voted this session (optimistic tracking)
+let pendingVote = null; // { id, direction, btn } queued while waiting for email
 
+const MAX_VOTES = 10;
 const SECTIONS = ["chat","cowork","code","chrome","office"];
 const LABELS = {chat:"Chat",cowork:"Cowork",code:"Code",chrome:"Chrome",office:"Excel/PPT"};
+
+// ─── LOCALSTORAGE ─────────────────────────────────────────────────────────────
+function saveUserVotes() {
+  try { localStorage.setItem('naucimeVotes', JSON.stringify(userVotes)); } catch(e) {}
+}
+function loadUserVotesFromStorage() {
+  try { return JSON.parse(localStorage.getItem('naucimeVotes') || '{}'); } catch(e) { return {}; }
+}
+
+// ─── EMAIL MODAL ─────────────────────────────────────────────────────────────
+function showEmailModal() {
+  document.getElementById('emailModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('emailInput').focus(), 50);
+}
+function hideEmailModal() {
+  document.getElementById('emailModal').classList.add('hidden');
+}
+
+document.getElementById('emailSubmit').addEventListener('click', () => {
+  const input = document.getElementById('emailInput');
+  const errEl = document.getElementById('emailError');
+  const email = input.value.trim();
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (!valid) {
+    errEl.classList.remove('hidden');
+    input.focus();
+    return;
+  }
+  errEl.classList.add('hidden');
+  localStorage.setItem('naucimeEmail', email);
+  hideEmailModal();
+  if (pendingVote) {
+    const { id, direction, btn } = pendingVote;
+    pendingVote = null;
+    castVote(id, direction, btn, email);
+  }
+});
+
+document.getElementById('emailInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('emailSubmit').click();
+});
 
 // ─── VOTE HELPERS ─────────────────────────────────────────────────────────────
 async function loadVotes() {
@@ -684,22 +814,61 @@ async function loadVotes() {
     for (const [k, v] of Object.entries(data)) {
       voteCounts[k] = parseInt(v) || 0;
     }
+    buildCards();
+  } catch (e) {}
+}
+
+async function syncMyVotes() {
+  try {
+    const r = await fetch('/api/my-votes');
+    if (!r.ok) return;
+    const data = await r.json();
+    userVotes = data.votes || {};
+    remainingVotes = data.remaining;
+    saveUserVotes();
     updateRemainingDisplay();
     buildCards();
   } catch (e) {
-    // votes unavailable — silently continue
+    // Fall back to localStorage
+    userVotes = loadUserVotesFromStorage();
+    remainingVotes = Math.max(0, MAX_VOTES - Object.keys(userVotes).length);
+    updateRemainingDisplay();
+    buildCards();
   }
 }
 
-async function castVote(useCaseId, btn) {
-  if (remainingVotes <= 0) return;
+function handleVote(id, direction, btn) {
+  const email = localStorage.getItem('naucimeEmail');
+  if (!email) {
+    pendingVote = { id, direction, btn };
+    showEmailModal();
+    return;
+  }
+  castVote(id, direction, btn, email);
+}
+
+async function castVote(useCaseId, direction, btn, email) {
   btn.disabled = true;
 
-  // Optimistic update
   const key = String(useCaseId);
-  voteCounts[key] = (voteCounts[key] || 0) + 1;
-  remainingVotes = Math.max(0, remainingVotes - 1);
-  votedIds.add(useCaseId);
+  const prevCount = voteCounts[key] || 0;
+  const prevVote = userVotes[key] || null;
+  const prevRemaining = remainingVotes;
+
+  // Optimistic update
+  if (prevVote === direction) {
+    delete userVotes[key];
+    voteCounts[key] = prevCount + (direction === 'up' ? -1 : 1);
+    remainingVotes = Math.min(MAX_VOTES, remainingVotes + 1);
+  } else if (prevVote) {
+    userVotes[key] = direction;
+    voteCounts[key] = prevCount + (direction === 'up' ? 2 : -2);
+  } else {
+    userVotes[key] = direction;
+    voteCounts[key] = prevCount + (direction === 'up' ? 1 : -1);
+    remainingVotes = Math.max(0, remainingVotes - 1);
+  }
+  saveUserVotes();
   updateRemainingDisplay();
   buildCards();
 
@@ -707,32 +876,28 @@ async function castVote(useCaseId, btn) {
     const r = await fetch('/api/vote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ useCaseId })
+      body: JSON.stringify({ useCaseId, direction, email })
     });
     const data = await r.json();
     if (!r.ok) {
-      // Rollback optimistic update
-      voteCounts[key] = Math.max(0, (voteCounts[key] || 1) - 1);
-      votedIds.delete(useCaseId);
-      remainingVotes = Math.min(10, remainingVotes + 1);
-      if (data.remaining === 0) remainingVotes = 0;
-      updateRemainingDisplay();
-      buildCards();
-      return;
+      // Rollback
+      voteCounts[key] = prevCount;
+      if (prevVote) userVotes[key] = prevVote; else delete userVotes[key];
+      remainingVotes = prevRemaining;
+    } else {
+      voteCounts[key] = data.votes;
+      if (data.userVote) userVotes[key] = data.userVote; else delete userVotes[key];
+      remainingVotes = data.remaining;
     }
-    // Sync with server truth
-    voteCounts[key] = data.votes;
-    remainingVotes = data.remaining;
-    updateRemainingDisplay();
-    buildCards();
   } catch (e) {
-    // Network error — rollback
-    voteCounts[key] = Math.max(0, (voteCounts[key] || 1) - 1);
-    votedIds.delete(useCaseId);
-    remainingVotes = Math.min(10, remainingVotes + 1);
-    updateRemainingDisplay();
-    buildCards();
+    // Rollback on network error
+    voteCounts[key] = prevCount;
+    if (prevVote) userVotes[key] = prevVote; else delete userVotes[key];
+    remainingVotes = prevRemaining;
   }
+  saveUserVotes();
+  updateRemainingDisplay();
+  buildCards();
 }
 
 function updateRemainingDisplay() {
@@ -743,10 +908,13 @@ function updateRemainingDisplay() {
 // ─── CARD BUILDER ─────────────────────────────────────────────────────────────
 function cardHTML(d, rank) {
   const votes = voteCounts[String(d.n)] || 0;
-  const hasVoted = votedIds.has(d.n);
-  const voteBtnDisabled = (remainingVotes <= 0) ? 'disabled' : '';
-  const votedClass = hasVoted ? 'voted' : '';
-  const voteCountClass = votes > 0 ? 'has-votes' : '';
+  const userVote = userVotes[String(d.n)] || null;
+  const noVotesLeft = !userVote && remainingVotes <= 0;
+  const disabledAttr = noVotesLeft ? 'disabled' : '';
+  const upClass = userVote === 'up' ? 'voted-up' : '';
+  const downClass = userVote === 'down' ? 'voted-down' : '';
+  const voteCountClass = votes !== 0 ? 'has-votes' : '';
+  const score = votes > 0 ? `+${votes}` : String(votes);
   const rankBadge = rank !== undefined
     ? `<span class="rank-badge">#${rank + 1}</span>`
     : `<span class="card-num">#${d.n}</span>`;
@@ -760,8 +928,9 @@ function cardHTML(d, rank) {
       <div class="card-title">${d.t}</div>
       <div class="card-desc">${d.d}</div>
       <div class="card-vote">
-        <button class="vote-btn ${votedClass}" ${voteBtnDisabled} onclick="handleVote(${d.n}, this)">▲ Hlasovat</button>
-        <span class="vote-count ${voteCountClass}">${votes > 0 ? votes + (votes === 1 ? ' hlas' : votes < 5 ? ' hlasy' : ' hlasů') : '0 hlasů'}</span>
+        <button class="vote-btn vote-up ${upClass}" ${disabledAttr} onclick="handleVote(${d.n}, 'up', this)">▲</button>
+        <span class="vote-count ${voteCountClass}">${score}</span>
+        <button class="vote-btn vote-down ${downClass}" ${disabledAttr} onclick="handleVote(${d.n}, 'down', this)">▼</button>
       </div>
     </div>
   `;
@@ -836,10 +1005,6 @@ function buildCards() {
   }
 }
 
-// Global click handler for vote buttons
-function handleVote(id, btn) {
-  castVote(id, btn);
-}
 
 // ─── UI CONTROLS ──────────────────────────────────────────────────────────────
 document.querySelectorAll(".pill").forEach(btn => {
@@ -865,8 +1030,11 @@ document.getElementById("sortByVotesBtn").addEventListener("click", () => {
 });
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+userVotes = loadUserVotesFromStorage();
+remainingVotes = Math.max(0, MAX_VOTES - Object.keys(userVotes).length);
 buildCards();
 loadVotes();
+syncMyVotes();
 </script>
 </body>
 </html>

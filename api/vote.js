@@ -1,6 +1,7 @@
 import { kv } from '@vercel/kv';
 
-const MAX_VOTES_PER_IP = 10;
+const MAX_VOTES = 10;
+const TTL = 30 * 24 * 3600; // 30 days in seconds
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,40 +12,55 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { useCaseId } = req.body || {};
-    if (!useCaseId && useCaseId !== 0) {
-      return res.status(400).json({ error: 'Missing useCaseId' });
+    const { useCaseId, direction, email } = req.body || {};
+
+    if (useCaseId == null) return res.status(400).json({ error: 'Missing useCaseId' });
+    if (direction !== 'up' && direction !== 'down') return res.status(400).json({ error: 'Invalid direction' });
+    if (!email || !email.includes('@')) return res.status(400).json({ error: 'Valid email required' });
+
+    const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress || 'unknown';
+    const ipVotesKey = `ipvotes:${ip}`;
+    const idStr = String(useCaseId);
+
+    // Save email (fire and forget)
+    kv.hset('emails', { [email]: `${ip}:${Date.now()}` }).catch(() => {});
+
+    const existing = await kv.hget(ipVotesKey, idStr);
+
+    let delta = 0;
+    let newVote = null;
+
+    if (existing === direction) {
+      // Same direction → toggle off (remove vote)
+      await kv.hdel(ipVotesKey, idStr);
+      delta = direction === 'up' ? -1 : 1;
+      newVote = null;
+    } else if (existing) {
+      // Different direction → change vote (no slot consumed)
+      await kv.hset(ipVotesKey, { [idStr]: direction });
+      delta = direction === 'up' ? 2 : -2;
+      newVote = direction;
+    } else {
+      // New vote — check limit
+      const used = await kv.hlen(ipVotesKey);
+      if (used >= MAX_VOTES) {
+        return res.status(429).json({ error: 'Dosáhli jste limitu hlasů (10 use cases).', remaining: 0 });
+      }
+      await kv.hset(ipVotesKey, { [idStr]: direction });
+      delta = direction === 'up' ? 1 : -1;
+      newVote = direction;
     }
 
-    // Get client IP from Vercel's forwarded header
-    const ip =
-      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
-      req.socket?.remoteAddress ||
-      'unknown';
+    // Refresh TTL on every vote action
+    await kv.expire(ipVotesKey, TTL);
 
-    const ipKey = `ip:${ip}`;
+    const newCount = await kv.hincrby('votes', idStr, delta);
+    const usedAfter = await kv.hlen(ipVotesKey);
+    const remaining = Math.max(0, MAX_VOTES - usedAfter);
 
-    // How many votes has this IP used?
-    const usedRaw = await kv.get(ipKey);
-    const usedVotes = parseInt(usedRaw || '0');
-
-    if (usedVotes >= MAX_VOTES_PER_IP) {
-      return res.status(429).json({
-        error: 'Dosáhli jste limitu hlasů (10 za IP adresu).',
-        remaining: 0
-      });
-    }
-
-    // Atomically increment vote count for the use case
-    const newCount = await kv.hincrby('votes', String(useCaseId), 1);
-    // Atomically increment used votes for this IP
-    const newUsed = await kv.incr(ipKey);
-
-    const remaining = MAX_VOTES_PER_IP - newUsed;
-
-    res.status(200).json({ success: true, votes: newCount, remaining });
+    res.status(200).json({ success: true, votes: newCount, userVote: newVote, remaining });
   } catch (err) {
-    console.error('vote POST error:', err);
+    console.error('vote error:', err);
     res.status(500).json({ error: 'Nepodařilo se zaznamenat hlas.' });
   }
 }
