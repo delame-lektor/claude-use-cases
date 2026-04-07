@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude — 125 use cases</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Epilogue:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --chat:    #1a1a2e;
+    --chat-a:  #e63946;
+    --cowork:  #0d1b2a;
+    --cowork-a:#f4a261;
+    --code:    #0a0a0a;
+    --code-a:  #2ec4b6;
+    --chrome:  #1b2838;
+    --chrome-a:#7ec8e3;
+    --office:  #1a1209;
+    --office-a:#f7c59f;
+
+    --bg: #f5f0e8;
+    --surface: #fffdf8;
+    --ink: #1a1209;
+    --ink2: #5a5040;
+    --ink3: #9a9080;
+    --border: rgba(26,18,9,0.10);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Epilogue', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--ink);
+    color: #f5f0e8;
+    padding: 3.5rem 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.03);
+    pointer-events: none;
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.4);
+    margin-bottom: 0.75rem;
+  }
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    font-weight: 400;
+    line-height: 1.05;
+    color: #f5f0e8;
+  }
+  h1 em {
+    font-style: italic;
+    color: rgba(245,240,232,0.55);
+  }
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .total-count {
+    font-family: 'DM Serif Display', serif;
+    font-size: 4rem;
+    color: rgba(245,240,232,0.15);
+    line-height: 1;
+  }
+  .total-sub {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: rgba(245,240,232,0.3);
+    letter-spacing: 0.1em;
+  }
+
+  /* ─── VOTE BANNER ─── */
+  .vote-banner {
+    background: var(--ink);
+    color: rgba(245,240,232,0.6);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    padding: 8px 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .vote-banner span {
+    color: #f4a261;
+    font-weight: 500;
+  }
+
+  /* ─── CONTROLS ─── */
+  .controls-wrap {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(26,18,9,0.06);
+  }
+  .controls {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0.9rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+  }
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink3);
+    font-size: 13px;
+    pointer-events: none;
+    font-family: 'DM Mono', monospace;
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 7px 10px 7px 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type=text]:focus { border-color: var(--ink3); }
+
+  .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+
+  .pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    background: transparent;
+    color: var(--ink2);
+    transition: all 0.15s;
+    font-family: 'Epilogue', sans-serif;
+    white-space: nowrap;
+  }
+  .pill:hover { background: var(--bg); color: var(--ink); }
+
+  .pill[data-p="all"].active   { background: var(--ink); color: #f5f0e8; border-color: var(--ink); }
+  .pill[data-p="chat"].active  { background: var(--chat); color: var(--chat-a); border-color: var(--chat); }
+  .pill[data-p="cowork"].active{ background: var(--cowork); color: var(--cowork-a); border-color: var(--cowork); }
+  .pill[data-p="code"].active  { background: var(--code); color: var(--code-a); border-color: var(--code); }
+  .pill[data-p="chrome"].active{ background: var(--chrome); color: var(--chrome-a); border-color: var(--chrome); }
+  .pill[data-p="office"].active{ background: var(--office); color: var(--office-a); border-color: var(--office); }
+
+  /* Sort by votes pill — distinct amber style */
+  .pill-votes {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--ink2);
+    transition: all 0.15s;
+    font-family: 'Epilogue', sans-serif;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .pill-votes:hover { background: var(--bg); color: var(--ink); }
+  .pill-votes.active {
+    background: #f4a261;
+    color: #1a1209;
+    border-color: #f4a261;
+  }
+
+  .stats-label {
+    margin-left: auto;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink3);
+    white-space: nowrap;
+  }
+
+  /* ─── MAIN ─── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 2rem 4rem;
+  }
+
+  /* Section headers */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1.5px solid var(--border);
+  }
+  .section-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem;
+    font-weight: 400;
+  }
+  .section-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink3);
+    margin-left: auto;
+  }
+  .section-desc {
+    font-size: 12px;
+    color: var(--ink3);
+    max-width: 480px;
+  }
+
+  /* Top-votes section header */
+  .section-head-votes {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 2.5rem 0 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 2px solid #f4a261;
+  }
+  .section-head-votes .section-title { color: #b35e00; }
+
+  /* Cards grid */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    cursor: default;
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(26,18,9,0.08); }
+  .card:hover::before { opacity: 1; }
+
+  .card[data-p="chat"]::before   { background: var(--chat-a); }
+  .card[data-p="cowork"]::before { background: var(--cowork-a); }
+  .card[data-p="code"]::before   { background: var(--code-a); }
+  .card[data-p="chrome"]::before { background: var(--chrome-a); }
+  .card[data-p="office"]::before { background: var(--office-a); }
+
+  .card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 3px 7px;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .badge-chat   { background: rgba(26,26,46,0.08); color: var(--chat); }
+  .badge-cowork { background: rgba(244,162,97,0.14); color: #b35e00; }
+  .badge-code   { background: rgba(46,196,182,0.12); color: #0d7f76; }
+  .badge-chrome { background: rgba(126,200,227,0.14); color: #2a6d8a; }
+  .badge-office { background: rgba(247,197,159,0.2); color: #a05a20; }
+
+  .card-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--ink3);
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .card-desc {
+    font-size: 11.5px;
+    color: var(--ink2);
+    line-height: 1.5;
+  }
+
+  /* ─── VOTE ROW ─── */
+  .card-vote {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .vote-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-family: 'Epilogue', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink2);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .vote-btn:hover:not(:disabled) {
+    border-color: #f4a261;
+    color: #b35e00;
+    background: rgba(244,162,97,0.08);
+  }
+  .vote-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .vote-btn.voted {
+    border-color: #f4a261;
+    background: rgba(244,162,97,0.12);
+    color: #b35e00;
+  }
+  .vote-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink3);
+    min-width: 20px;
+  }
+  .vote-count.has-votes {
+    color: #b35e00;
+    font-weight: 500;
+  }
+
+  /* Vote rank badge for sorted view */
+  .rank-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    color: #b35e00;
+    background: rgba(244,162,97,0.15);
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--ink3);
+  }
+  .empty-big {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--border);
+  }
+
+  /* Hidden */
+  .hidden { display: none !important; }
+
+  @media (max-width: 600px) {
+    header { padding: 2rem 1.2rem 1.8rem; }
+    .controls { padding: 0.7rem 1rem; }
+    main { padding: 1rem 1rem 3rem; }
+    .cards { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .section-desc { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="header-label">naucime.ai — přehled produktů</div>
+      <h1>Claude<br><em>use cases</em></h1>
+    </div>
+    <div class="header-right">
+      <div class="total-count" id="totalCount">125</div>
+      <div class="total-sub">USE CASES / 5 PRODUKTŮ</div>
+    </div>
+  </div>
+</header>
+<div class="vote-banner" id="voteBanner">
+  Hlasujte pro nejlepší use cases — každá IP adresa má <span>10 hlasů</span>. Zbývá vám: <span id="remainingVotes">…</span> hlasů.
+</div>
+
+<div class="controls-wrap">
+  <div class="controls">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search" placeholder="Hledat use case…" autocomplete="off">
+    </div>
+    <div class="divider"></div>
+    <button class="pill active" data-p="all">Vše</button>
+    <button class="pill" data-p="chat">Chat</button>
+    <button class="pill" data-p="cowork">Cowork</button>
+    <button class="pill" data-p="code">Code</button>
+    <button class="pill" data-p="chrome">Chrome</button>
+    <button class="pill" data-p="office">Excel / PPT</button>
+    <div class="divider"></div>
+    <button class="pill-votes" id="sortByVotesBtn">▲ Podle hlasů</button>
+    <span class="stats-label" id="statsLabel">125 use cases</span>
+  </div>
+</div>
+
+<main id="main">
+
+  <!-- ─── SORTED BY VOTES VIEW ─── -->
+  <div id="sorted-section" class="hidden">
+    <div class="section-head-votes">
+      <span class="section-title">Nejhůře hlasované use cases</span>
+      <span class="section-count" id="sorted-count"></span>
+    </div>
+    <div class="cards" id="cards-sorted"></div>
+  </div>
+
+  <!-- ─── CHAT ─── -->
+  <div class="section-head" data-section="chat">
+    <span class="section-dot" style="background:#e63946"></span>
+    <span class="section-title">Claude Chat</span>
+    <span class="section-desc">Textová konverzace, analýza, psaní, výzkum</span>
+    <span class="section-count" id="count-chat"></span>
+  </div>
+  <div class="cards" id="cards-chat"></div>
+
+  <!-- ─── COWORK ─── -->
+  <div class="section-head" data-section="cowork">
+    <span class="section-dot" style="background:#f4a261"></span>
+    <span class="section-title">Claude Cowork</span>
+    <span class="section-desc">Autonomní agent na desktopu — soubory, email, kalendář</span>
+    <span class="section-count" id="count-cowork"></span>
+  </div>
+  <div class="cards" id="cards-cowork"></div>
+
+  <!-- ─── CODE ─── -->
+  <div class="section-head" data-section="code">
+    <span class="section-dot" style="background:#2ec4b6"></span>
+    <span class="section-title">Claude Code</span>
+    <span class="section-desc">Vývoj, debugging, automatizace, DevOps</span>
+    <span class="section-count" id="count-code"></span>
+  </div>
+  <div class="cards" id="cards-code"></div>
+
+  <!-- ─── CHROME ─── -->
+  <div class="section-head" data-section="chrome">
+    <span class="section-dot" style="background:#7ec8e3"></span>
+    <span class="section-title">Claude in Chrome</span>
+    <span class="section-desc">Browsing agent — práce přímo v prohlížeči</span>
+    <span class="section-count" id="count-chrome"></span>
+  </div>
+  <div class="cards" id="cards-chrome"></div>
+
+  <!-- ─── OFFICE ─── -->
+  <div class="section-head" data-section="office">
+    <span class="section-dot" style="background:#f7c59f"></span>
+    <span class="section-title">Claude pro Excel &amp; PowerPoint</span>
+    <span class="section-desc">Tabulky, modely, prezentace — přímo v Office</span>
+    <span class="section-count" id="count-office"></span>
+  </div>
+  <div class="cards" id="cards-office"></div>
+
+  <div class="empty hidden" id="empty">
+    <div class="empty-big">∅</div>
+    Žádný use case nenalezen
+  </div>
+
+</main>
+
+<script>
+const DATA = [
+  // ─── CHAT (34) ───
+  {n:1, p:"chat", t:"Shrnutí dokumentů", d:"Rychlé shrnutí PDF, smluv, reportů a dlouhých článků"},
+  {n:2, p:"chat", t:"Brainstorming nápadů", d:"Generování kreativních nápadů pro produkty, kampaně nebo projekty"},
+  {n:3, p:"chat", t:"Psaní emailů", d:"Profesionální emaily v češtině, angličtině i polštině"},
+  {n:4, p:"chat", t:"Překlad textů", d:"Překlad mezi češtinou, angličtinou, němčinou a dalšími jazyky"},
+  {n:5, p:"chat", t:"Korektura a editace", d:"Oprava gramatiky, stylu a tónu jakéhokoli textu"},
+  {n:6, p:"chat", t:"Výzkum a analýza trhu", d:"Hloubkový průzkum témat, trhů a konkurenčního prostředí"},
+  {n:7, p:"chat", t:"Psaní obchodních nabídek", d:"Tvorba cenových nabídek a obchodních dokumentů"},
+  {n:8, p:"chat", t:"Příprava na meeting", d:"Agenda, podklady a klíčové body pro jednání"},
+  {n:9, p:"chat", t:"Zákaznická podpora – šablony", d:"FAQ, odpovědní šablony a skripty pro support"},
+  {n:10, p:"chat", t:"Tvorba obsahu", d:"Blogové příspěvky, LinkedIn posty, newslettery"},
+  {n:11, p:"chat", t:"Analýza dat v textu", d:"Interpretace čísel, tabulek a trendů z vložených dat"},
+  {n:12, p:"chat", t:"Vysvětlení složitých konceptů", d:"Laické vysvětlení technických, právních nebo vědeckých témat"},
+  {n:13, p:"chat", t:"Tvorba šablon dokumentů", d:"Šablony smluv, formulářů, procesů a reportů"},
+  {n:14, p:"chat", t:"Roleplay pro obchodní trénink", d:"Simulace prodejních rozhovorů, obtížných klientů, HR pohovorů"},
+  {n:15, p:"chat", t:"Kritická zpětná vazba", d:"Hodnocení business plánů, textů, prezentací"},
+  {n:16, p:"chat", t:"SEO optimalizace", d:"Meta texty, klíčová slova, struktura článků"},
+  {n:17, p:"chat", t:"Příprava školení a kurzů", d:"Osnovy, studijní materiály a kvízy pro firemní vzdělávání"},
+  {n:18, p:"chat", t:"Strategické plánování", d:"Frameworky, SWOT, roadmapy a go-to-market plány"},
+  {n:19, p:"chat", t:"Právní shrnutí smluv", d:"Laické shrnutí smluv a právních dokumentů (ne poradenství)"},
+  {n:20, p:"chat", t:"Copywriting a reklama", d:"Landing page texty, slogany, reklamní copy"},
+  {n:21, p:"chat", t:"Storytelling pro pitch", d:"Narativ a příběh produktu pro investory a zákazníky"},
+  {n:22, p:"chat", t:"Tvorba buyer person", d:"Zákaznické segmenty, profily a pain-pointy"},
+  {n:23, p:"chat", t:"Zpracování zpětné vazby", d:"Analýza zákaznické zpětné vazby a NPS komentářů"},
+  {n:24, p:"chat", t:"Příprava prezentace", d:"Struktura slidů, klíčové zprávy, speaker notes"},
+  {n:25, p:"chat", t:"Komunikační strategie", d:"Tone of voice, messaging framework, brand voice"},
+  {n:26, p:"chat", t:"Příprava na pracovní pohovor", d:"Otázky, odpovědi a příprava na pohovor"},
+  {n:27, p:"chat", t:"Osobní produktivita", d:"GTD systémy, time management, nastavení priorit"},
+  {n:28, p:"chat", t:"Výzkum dodavatelů", d:"Porovnání dodavatelů, due diligence otázky"},
+  {n:29, p:"chat", t:"Risk analýza projektu", d:"Identifikace a hodnocení projektových rizik"},
+  {n:30, p:"chat", t:"Tvorba dotazníků", d:"Průzkumy, onboarding formuláře, NPS dotazníky"},
+  {n:31, p:"chat", t:"Plánování kariérní dráhy", d:"Skill gap analýza, timeline, konkrétní kroky vpřed"},
+  {n:32, p:"chat", t:"Debate a stress-test nápadů", d:"Testování myšlenek proti protiargumentům"},
+  {n:33, p:"chat", t:"Granty a fundraising", d:"Výběr grantů, prioritizace, příprava přihlášek"},
+  {n:34, p:"chat", t:"Teorie změny programu", d:"Kauzální řetězec od vstupu přes aktivity po dopad"},
+
+  // ─── COWORK (32) ───
+  {n:35, p:"cowork", t:"Správa emailů", d:"Třídění, odpovídání a archivace Gmail schránky"},
+  {n:36, p:"cowork", t:"Správa kalendáře", d:"Plánování schůzek, bloky soustředění, připomínky"},
+  {n:37, p:"cowork", t:"Denní morning briefing", d:"Přehled kalendáře a emailů připravený každé ráno"},
+  {n:38, p:"cowork", t:"Týdenní review", d:"Automatický přehled aktivit za uplynulý týden"},
+  {n:39, p:"cowork", t:"Odpovídání na emaily", d:"Drafty a odeslání odpovědí dle instrukcí a stylu"},
+  {n:40, p:"cowork", t:"Follow-up tracking", d:"Sledování nevyřízených emailů a chybějících odpovědí"},
+  {n:41, p:"cowork", t:"Plánování meetingů", d:"Návrh termínů, pozvánky a agendy schůzek"},
+  {n:42, p:"cowork", t:"Prioritizace úkolů", d:"Seřazení emailů a úkolů dle naléhavosti a důležitosti"},
+  {n:43, p:"cowork", t:"Správa kontaktů", d:"Aktualizace a organizace firemních kontaktů"},
+  {n:44, p:"cowork", t:"Zpracování emailových příloh", d:"Analýza a shrnutí dokumentů z emailových příloh"},
+  {n:45, p:"cowork", t:"Automatizace reportů", d:"Pravidelné reporty z emailů a dokumentů"},
+  {n:46, p:"cowork", t:"CRM aktualizace", d:"Zápis aktivit, poznámek a kontaktů do CRM"},
+  {n:47, p:"cowork", t:"Organizace Google Drive", d:"Třídění, přejmenování a sdílení souborů"},
+  {n:48, p:"cowork", t:"Onboarding automatizace", d:"Automatizace kroků pro nové zaměstnance"},
+  {n:49, p:"cowork", t:"Projektový status tracking", d:"Sledování milníků a aktualizace statusu projektů"},
+  {n:50, p:"cowork", t:"Správa příchozích faktur", d:"Sledování a kategorizace faktur v emailu"},
+  {n:51, p:"cowork", t:"Rekonciliace transakcí", d:"Párování bankovních výpisů a účetních záznamů"},
+  {n:52, p:"cowork", t:"Meeting notes ze zdrojů", d:"Shrnutí z emailových vláken a Slacku do meeting notes"},
+  {n:53, p:"cowork", t:"B2B outreach ve scale", d:"Personalizované obchodní emaily na velké množství kontaktů"},
+  {n:54, p:"cowork", t:"Zákaznický servis", d:"Třídění a odpovídání na zákaznické požadavky"},
+  {n:55, p:"cowork", t:"Rekrutace pipeline", d:"Správa kandidátů a plánování pohovorů"},
+  {n:56, p:"cowork", t:"Event organizace", d:"Koordinace akcí, pozvánek a sledování RSVP"},
+  {n:57, p:"cowork", t:"Onboarding dodavatelů", d:"Čtení složky vendor dokumentů, tracker, smlouvy, formuláře"},
+  {n:58, p:"cowork", t:"Market sizing s výstupy", d:"Výzkum trhu → PowerPoint + Excel + Markdown zdroje"},
+  {n:59, p:"cowork", t:"Analýza z browser grafů", d:"Data z board decků + makrodata → srovnávací grafy"},
+  {n:60, p:"cowork", t:"Organizace ploch a složek", d:"Automatické třídění souborů na desktopu do složek"},
+  {n:61, p:"cowork", t:"Příprava na compliance audit", d:"Organizace policy dokumentů, smluv a záznamů"},
+  {n:62, p:"cowork", t:"Cross-platform feedback analýza", d:"Syntéza z call transkriptů, Slacku, CRM a Linear"},
+  {n:63, p:"cowork", t:"Daily briefing z více nástrojů", d:"Propojení Slack + Notion + dashboard do jednoho přehledu"},
+  {n:64, p:"cowork", t:"Generování project status reportů", d:"Stav projektů z emailů, Slacku a nástrojů v jednom místě"},
+  {n:65, p:"cowork", t:"B2B due diligence", d:"Hodnocení firmy z SEC podání, klinických dat a patentů"},
+  {n:66, p:"cowork", t:"Reminder systém", d:"Automatické připomínky deadlinů a follow-up termínů"},
+
+  // ─── CODE (25) ───
+  {n:67, p:"code", t:"Generování kódu", d:"Psaní funkcí, komponent a skriptů z přirozeného jazyka"},
+  {n:68, p:"code", t:"Code review", d:"Kontrola kódu na chyby, bezpečnost a best practices"},
+  {n:69, p:"code", t:"Debugging", d:"Identifikace a oprava bugů v kódu"},
+  {n:70, p:"code", t:"Refaktoring kódu", d:"Přepsání pro lepší čitelnost, výkon a čistotu"},
+  {n:71, p:"code", t:"Dokumentace kódu", d:"Automatické generování komentářů, README a API docs"},
+  {n:72, p:"code", t:"SQL dotazy", d:"Tvorba a optimalizace databázových dotazů"},
+  {n:73, p:"code", t:"API integrace", d:"Napojení externích API, webhooků a third-party služeb"},
+  {n:74, p:"code", t:"Unit testy", d:"Generování test cases, mock data a test suite"},
+  {n:75, p:"code", t:"Migrace kódu", d:"Převod mezi jazyky nebo verzemi frameworků"},
+  {n:76, p:"code", t:"Frontend komponenty", d:"React, Vue, HTML/CSS UI prvky a komponenty"},
+  {n:77, p:"code", t:"Backend logika", d:"Node.js, Python, PHP server-side kód a business logika"},
+  {n:78, p:"code", t:"Shell skripty", d:"Bash, PowerShell automatizační skripty"},
+  {n:79, p:"code", t:"Docker a DevOps", d:"Dockerfile, CI/CD pipeline a deployment konfigurace"},
+  {n:80, p:"code", t:"Databázový design", d:"Schéma návrh, relace, normalizace a indexy"},
+  {n:81, p:"code", t:"Bezpečnostní audit", d:"Skenování zranitelností a security best practices"},
+  {n:82, p:"code", t:"Výkonnostní optimalizace", d:"Profilování a tuning pomalého kódu"},
+  {n:83, p:"code", t:"Parsing a transformace dat", d:"CSV, JSON, XML zpracování a konverze formátů"},
+  {n:84, p:"code", t:"Web scraping", d:"Extrakce a strukturování dat z webových stránek"},
+  {n:85, p:"code", t:"Cloud konfigurace", d:"AWS, Azure, GCP infrastructure as code (Terraform, CDK)"},
+  {n:86, p:"code", t:"Automatizace testování", d:"Playwright, Cypress, Selenium testy a CI integrace"},
+  {n:87, p:"code", t:"AI/ML integrace", d:"Napojení LLM API, embeddingů a ML modelů"},
+  {n:88, p:"code", t:"Zoho Creator / Deluge", d:"Low-code skriptování a automatizace v Zoho ekosystému"},
+  {n:89, p:"code", t:"Datové pipeline a ETL", d:"Návrh a implementace datových transformací"},
+  {n:90, p:"code", t:"WMS / ERP logika", d:"Skladová a ERP business logika a systémové integrace"},
+  {n:91, p:"code", t:"Modernizace legacy kódu", d:"Převod starého kódu do moderních patterns a technologií"},
+
+  // ─── CHROME (18) ───
+  {n:92, p:"chrome", t:"Log sales calls do CRM", d:"Čte kalendář, páruje účastníky se Salesforce kontakty, vytvoří activity log"},
+  {n:93, p:"chrome", t:"Porovnání produktů z více tabů", d:"Čte spec z otevřených stránek, normalizuje data, tabulka do Google Sheets"},
+  {n:94, p:"chrome", t:"Příprava z kalendáře na týden", d:"Čte emaily, flaguje meetingy bez přípravy, rezervuje místnosti"},
+  {n:95, p:"chrome", t:"Čištění promo emailů", d:"Skenuje schránku, identifikuje marketingové emaily, označí ke smazání"},
+  {n:96, p:"chrome", t:"Extrakce metrik z dashboardů", d:"Naviguje v analytice, vytáhne čísla bez exportu a manuálního kopírování"},
+  {n:97, p:"chrome", t:"Organizace Google Drive", d:"Třídí soubory, vytváří strukturu složek, flaguje duplikáty"},
+  {n:98, p:"chrome", t:"Tranzitní výzkum – mobil → desktop", d:"Hlas na mobilu → výzkum a výstupy na desktopu"},
+  {n:99, p:"chrome", t:"Analýza kampaní z více platforem", d:"Sbírá metriky z Facebook Ads, Google Ads a GA4 v jednom přehledu"},
+  {n:100, p:"chrome", t:"Linkedin prospecting", d:"Prochází profily, extrahuje kontaktní data a připraví outreach"},
+  {n:101, p:"chrome", t:"Monitoring konkurence", d:"Pravidelně kontroluje weby a zaznamenává změny cen a obsahu"},
+  {n:102, p:"chrome", t:"Shrnutí online výzkumu", d:"Otevřené záložky z výzkumu shrne do strukturovaných poznámek"},
+  {n:103, p:"chrome", t:"Vyplňování formulářů", d:"Automatické vyplnění opakujících se webových formulářů"},
+  {n:104, p:"chrome", t:"Monitoring cen", d:"Sleduje ceny produktů na e-shopech a alertuje na změny"},
+  {n:105, p:"chrome", t:"Sběr dat pro analýzu", d:"Extrahuje tabulková data z webů a připraví CSV"},
+  {n:106, p:"chrome", t:"Newsletter monitoring", d:"Čte newslettery, shrne klíčové trendy za týden"},
+  {n:107, p:"chrome", t:"Job scouting", d:"Prohledává pracovní portály dle kritérií a sestaví přehled"},
+  {n:108, p:"chrome", t:"Citace a reference", d:"Z otevřených vědeckých článků sestaví bibliografii"},
+  {n:109, p:"chrome", t:"Porovnání cestovních nabídek", d:"Letenkové a hotelové weby → srovnávací tabulka"},
+
+  // ─── EXCEL / PPT (16) ───
+  {n:110, p:"office", t:"Aktualizace finančního modelu", d:"Po earnings: Cowork stáhne data, Excel opraví buňky, PPT přestaví stránku"},
+  {n:111, p:"office", t:"Pochopení zdědě­ného spreadsheetu", d:"Vysvětlení existujících vzorců a logiky, bezpečné přidání nových dat"},
+  {n:112, p:"office", t:"Tvorba finančních modelů", d:"Investiční analýzy, scénáře a hodnocení rizik v Excelu"},
+  {n:113, p:"office", t:"Organizace osobních financí", d:"Přehled příjmů a výdajů, trendy, filtry a přehledy"},
+  {n:114, p:"office", t:"Obchodní a finanční reporty", d:"Metriky z CRM → polished reporty s grafy a insights"},
+  {n:115, p:"office", t:"Analýza kampaní", d:"Data výkonu kampaní → identifikace nejlepších kanálů"},
+  {n:116, p:"office", t:"Rekonciliace transakcí", d:"Bankovní exporty + účetní soubory → anotovaný report"},
+  {n:117, p:"office", t:"Vizualizace programových dat", d:"Statistiky programů → grafy a dashboardy pro stakeholdery"},
+  {n:118, p:"office", t:"Sales proposal prezentace", d:"Polished klientský deck s datovými vizualizacemi"},
+  {n:119, p:"office", t:"Prezentace z výzkumu", d:"Výzkumné výsledky → slide osnova a speaker notes"},
+  {n:120, p:"office", t:"Budget scénáře side by side", d:"Tři rozpočtové scénáře vedle sebe s togglem % / Kč"},
+  {n:121, p:"office", t:"Porovnání vendor nabídek", d:"Upload nabídek v různých formátech → normalizovaná tabulka"},
+  {n:122, p:"office", t:"Výroční zpráva o dopadu", d:"Programová data → infografiky a příběhy o výsledcích"},
+  {n:123, p:"office", t:"Fundraising pyramid", d:"Cíl kampaně → vizualizace dárcovské pyramidy tier po tieru"},
+  {n:124, p:"office", t:"Analýza retence dárců", d:"Slidery pro retenci vs. akvizici → křivka 5letých projekcí"},
+  {n:125, p:"office", t:"Investment memo deck", d:"Platformová data → investment memo dle struktury firmy"},
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let activeFilter = "all";
+let searchVal = "";
+let sortByVotes = false;
+let voteCounts = {};      // { "1": 5, "3": 2, ... }
+let remainingVotes = 10;
+let votedIds = new Set(); // IDs voted this session (optimistic tracking)
+
+const SECTIONS = ["chat","cowork","code","chrome","office"];
+const LABELS = {chat:"Chat",cowork:"Cowork",code:"Code",chrome:"Chrome",office:"Excel/PPT"};
+
+// ─── VOTE HELPERS ─────────────────────────────────────────────────────────────
+async function loadVotes() {
+  try {
+    const r = await fetch('/api/votes');
+    if (!r.ok) return;
+    const data = await r.json();
+    for (const [k, v] of Object.entries(data)) {
+      voteCounts[k] = parseInt(v) || 0;
+    }
+    updateRemainingDisplay();
+    buildCards();
+  } catch (e) {
+    // votes unavailable — silently continue
+  }
+}
+
+async function castVote(useCaseId, btn) {
+  if (remainingVotes <= 0) return;
+  btn.disabled = true;
+
+  // Optimistic update
+  const key = String(useCaseId);
+  voteCounts[key] = (voteCounts[key] || 0) + 1;
+  remainingVotes = Math.max(0, remainingVotes - 1);
+  votedIds.add(useCaseId);
+  updateRemainingDisplay();
+  buildCards();
+
+  try {
+    const r = await fetch('/api/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ useCaseId })
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      // Rollback optimistic update
+      voteCounts[key] = Math.max(0, (voteCounts[key] || 1) - 1);
+      votedIds.delete(useCaseId);
+      remainingVotes = Math.min(10, remainingVotes + 1);
+      if (data.remaining === 0) remainingVotes = 0;
+      updateRemainingDisplay();
+      buildCards();
+      return;
+    }
+    // Sync with server truth
+    voteCounts[key] = data.votes;
+    remainingVotes = data.remaining;
+    updateRemainingDisplay();
+    buildCards();
+  } catch (e) {
+    // Network error — rollback
+    voteCounts[key] = Math.max(0, (voteCounts[key] || 1) - 1);
+    votedIds.delete(useCaseId);
+    remainingVotes = Math.min(10, remainingVotes + 1);
+    updateRemainingDisplay();
+    buildCards();
+  }
+}
+
+function updateRemainingDisplay() {
+  const el = document.getElementById('remainingVotes');
+  if (el) el.textContent = remainingVotes;
+}
+
+// ─── CARD BUILDER ─────────────────────────────────────────────────────────────
+function cardHTML(d, rank) {
+  const votes = voteCounts[String(d.n)] || 0;
+  const hasVoted = votedIds.has(d.n);
+  const voteBtnDisabled = (remainingVotes <= 0) ? 'disabled' : '';
+  const votedClass = hasVoted ? 'voted' : '';
+  const voteCountClass = votes > 0 ? 'has-votes' : '';
+  const rankBadge = rank !== undefined
+    ? `<span class="rank-badge">#${rank + 1}</span>`
+    : `<span class="card-num">#${d.n}</span>`;
+
+  return `
+    <div class="card" data-p="${d.p}" data-id="${d.n}">
+      <div class="card-top">
+        <span class="badge badge-${d.p}">${LABELS[d.p]}</span>
+        ${rankBadge}
+      </div>
+      <div class="card-title">${d.t}</div>
+      <div class="card-desc">${d.d}</div>
+      <div class="card-vote">
+        <button class="vote-btn ${votedClass}" ${voteBtnDisabled} onclick="handleVote(${d.n}, this)">▲ Hlasovat</button>
+        <span class="vote-count ${voteCountClass}">${votes > 0 ? votes + (votes === 1 ? ' hlas' : votes < 5 ? ' hlasy' : ' hlasů') : '0 hlasů'}</span>
+      </div>
+    </div>
+  `;
+}
+
+function buildCards() {
+  const q = searchVal.toLowerCase();
+
+  // Filter data
+  const filtered = DATA.filter(d => {
+    const matchP = activeFilter === "all" || d.p === activeFilter;
+    const matchQ = !q || d.t.toLowerCase().includes(q) || d.d.toLowerCase().includes(q);
+    return matchP && matchQ;
+  });
+
+  const sortedSection = document.getElementById('sorted-section');
+  const normalSections = SECTIONS.map(s => ({
+    head: document.querySelector("[data-section='" + s + "']"),
+    container: document.getElementById("cards-" + s),
+    count: document.getElementById("count-" + s)
+  }));
+
+  if (sortByVotes) {
+    // ── SORTED VIEW ──
+    sortedSection.classList.remove('hidden');
+    normalSections.forEach(({ head, container }) => {
+      head.classList.add('hidden');
+      container.classList.add('hidden');
+    });
+
+    const sorted = [...filtered].sort((a, b) => {
+      const va = voteCounts[String(a.n)] || 0;
+      const vb = voteCounts[String(b.n)] || 0;
+      return vb - va || a.n - b.n;
+    });
+
+    document.getElementById('sorted-count').textContent = sorted.length + ' use cases';
+    document.getElementById('cards-sorted').innerHTML = sorted.map((d, i) => cardHTML(d, i)).join('');
+    document.getElementById('statsLabel').textContent = sorted.length + ' use cases';
+    document.getElementById('totalCount').textContent = filtered.length;
+    document.getElementById('empty').classList.toggle('hidden', sorted.length > 0);
+
+  } else {
+    // ── SECTION VIEW ──
+    sortedSection.classList.add('hidden');
+
+    const sections = {};
+    SECTIONS.forEach(s => sections[s] = []);
+    filtered.forEach(d => sections[d.p].push(d));
+
+    let total = 0;
+    SECTIONS.forEach((sec, i) => {
+      const { head, container, count } = normalSections[i];
+      const items = sections[sec];
+      total += items.length;
+
+      if (items.length === 0) {
+        container.innerHTML = '';
+        head.classList.add('hidden');
+        container.classList.add('hidden');
+      } else {
+        head.classList.remove('hidden');
+        container.classList.remove('hidden');
+        count.textContent = items.length + ' use cases';
+        container.innerHTML = items.map(d => cardHTML(d)).join('');
+      }
+    });
+
+    document.getElementById('statsLabel').textContent = total + ' use cases';
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('empty').classList.toggle('hidden', total > 0);
+  }
+}
+
+// Global click handler for vote buttons
+function handleVote(id, btn) {
+  castVote(id, btn);
+}
+
+// ─── UI CONTROLS ──────────────────────────────────────────────────────────────
+document.querySelectorAll(".pill").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".pill").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.p;
+    buildCards();
+  });
+});
+
+document.getElementById("search").addEventListener("input", e => {
+  searchVal = e.target.value;
+  buildCards();
+});
+
+document.getElementById("sortByVotesBtn").addEventListener("click", () => {
+  sortByVotes = !sortByVotes;
+  const btn = document.getElementById("sortByVotesBtn");
+  btn.classList.toggle("active", sortByVotes);
+  btn.textContent = sortByVotes ? "▲ Podle hlasů (zap.)" : "▲ Podle hlasů";
+  buildCards();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+buildCards();
+loadVotes();
+</script>
+</body>
+</html>
